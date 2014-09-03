@@ -21,11 +21,14 @@ import java.util.Map;
 public class DelegatingTemplateEngine extends AbstractTemplateEngine {
     private final static Logger LOGGER = LoggerFactory.getLogger(DelegatingTemplateEngine.class);
 
-    private final TemplateEngines renderers;
+    /**
+     * Template engines are lzy loaded here to allow some template engines to refer to this 
+     * delegator (very useful to allow images to use a freemarker template, as an example)
+     */
+    private TemplateEngines renderers;
 
     public DelegatingTemplateEngine(final CompositeConfiguration config, final ODatabaseDocumentTx db, final File destination, final File templatesPath) {
         super(config, db, destination, templatesPath);
-        this.renderers = new TemplateEngines(config, db, destination, templatesPath);
     }
 
     @Override
@@ -44,8 +47,8 @@ public class DelegatingTemplateEngine extends AbstractTemplateEngine {
         if (!templateFile.exists()) {
         	LOGGER.info("Default template: {} was not found, searching for others...", templateName);
         	// if default template does not exist then check if any alternative engine templates exist
-	        String templateNameWithoutExt = templateName.substring(0, templateName.length()-4);
-	        for (String extension : renderers.getRecognizedExtensions()) {
+	        String templateNameWithoutExt = templateName.substring(0, templateName.lastIndexOf('.'));
+	        for (String extension : getRenderers().getRecognizedExtensions()) {
 	        	templateFile = new File(templatesPath, templateNameWithoutExt+"."+extension);
 	        	if (templateFile.exists()) {
 	        		LOGGER.info("Found alternative template file: {} using this instead", templateFile.getName());
@@ -55,11 +58,23 @@ public class DelegatingTemplateEngine extends AbstractTemplateEngine {
 	        }
         }
         String ext = FileUtil.fileExt(templateName);
-        AbstractTemplateEngine engine = renderers.getEngine(ext);
+        AbstractTemplateEngine engine = getRenderers().getEngine(ext);
         if (engine!=null) {
             engine.renderDocument(model, templateName, writer);
         } else {
             LOGGER.error("Warning - No template engine found for template: {}",templateName);
         }
     }
+
+	/**
+	 * @return the renderers
+	 * @category getter
+	 * @category renderers
+	 */
+	private TemplateEngines getRenderers() {
+		if(renderers==null) {
+			renderers = new TemplateEngines(config, db, destination, templatesPath);
+		}
+		return renderers;
+	}
 }
