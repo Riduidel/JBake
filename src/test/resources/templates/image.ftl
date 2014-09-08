@@ -8,9 +8,9 @@
 				<dt>${key}</dt>
 				<#assign value=content[key]>
 				<#if value?is_date>
-				<dt>${content[key]?datetime}</dt>
+				<dd>${content[key]?datetime}</dd>
 				<#else>
-				<dt>${content[key]}</dt>
+				<dd>${content[key]}</dd>
 				</#if>
 			</#list>
 			</dl>
