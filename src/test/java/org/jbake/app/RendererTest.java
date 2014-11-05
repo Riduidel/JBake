@@ -1,8 +1,13 @@
 package org.jbake.app;
 
-import com.orientechnologies.orient.core.db.document.ODatabaseDocumentTx;
+import java.io.File;
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.util.Map;
 
 import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.commons.io.FileUtils;
 import org.jbake.model.DocumentTypes;
 import org.junit.After;
 import org.junit.Assert;
@@ -11,25 +16,9 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-import java.io.File;
+import com.orientechnologies.orient.core.db.document.ODatabaseDocumentTx;
 
-import static org.assertj.core.api.Assertions.*;
-
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.util.Map;
-import java.util.Scanner;
-
-import org.apache.commons.configuration.CompositeConfiguration;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.StringUtils;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class RendererTest {
 
@@ -233,5 +222,31 @@ public class RendererTest {
         	.contains("blog/2012/first-post.html")
         	.contains("papers/published-paper.html")
         	.contains("draft-paper.html");
+    }
+
+    @Test
+    public void renderDates() throws Exception {
+        Crawler crawler = new Crawler(db, sourceFolder, config);
+        crawler.crawl(new File(sourceFolder, "content"));
+        Renderer renderer = new Renderer(db, destinationFolder, templateFolder, config);
+        renderer.renderDates(Crawler.getIntervals(db), "dates");
+        
+        // verify year
+        File yearIs2012 = new File(new File(destinationFolder, "dates"), "2012");
+        File outputFile = new File(yearIs2012, "index.html");
+        assertThat(outputFile).exists();
+        String output = FileUtils.readFileToString(outputFile);
+        // Used date template list entries having the given period
+        assertThat(output)
+        	.contains("blog/2012/first-post.html");
+        // verify month
+        File monthIsFeb = new File(yearIs2012, "02");
+        outputFile = new File(monthIsFeb, "index.html");
+        assertThat(outputFile).exists();
+        output = FileUtils.readFileToString(outputFile);
+        // Used date template list entries having the given period
+        assertThat(output)
+        	.contains("blog/2012/first-post.html")
+        	.contains("<span class=\"period month\">02</span>");
     }
 }
