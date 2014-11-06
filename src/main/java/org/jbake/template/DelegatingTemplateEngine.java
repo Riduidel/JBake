@@ -1,13 +1,16 @@
 package org.jbake.template;
 
 import com.orientechnologies.orient.core.db.document.ODatabaseDocumentTx;
+
 import org.apache.commons.configuration.CompositeConfiguration;
+import org.jbake.app.ConfigUtil.Keys;
 import org.jbake.app.FileUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.Writer;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -30,7 +33,8 @@ public class DelegatingTemplateEngine extends AbstractTemplateEngine {
 
     @Override
     public void renderDocument(final Map<String, Object> model, String templateName, final Writer writer) throws RenderingException {
-        model.put("version", config.getString("version"));
+        model.put("version", config.getString(Keys.VERSION));
+        model.put("baked_timestamp", new Date());
         Map<String, Object> configModel = new HashMap<String, Object>();
         Iterator<String> configKeys = config.getKeys();
         while (configKeys.hasNext()) {

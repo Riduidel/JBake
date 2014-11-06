@@ -8,6 +8,7 @@ import java.util.List;
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.jbake.app.ConfigUtil;
+import org.jbake.app.ConfigUtil.Keys;
 import org.jbake.app.FileUtil;
 import org.jbake.app.Oven;
 import org.kohsuke.args4j.CmdLineException;
@@ -66,7 +67,7 @@ public class Main {
 			System.exit(1);
 		}
 		
-		System.out.println("JBake " + config.getString("version") + " (" + config.getString("build.timestamp") + ") [http://jbake.org]");
+		System.out.println("JBake " + config.getString(Keys.VERSION) + " (" + config.getString(Keys.BUILD_TIMESTAMP) + ") [http://jbake.org]");
 		System.out.println();
 		
 		if (res.isHelpNeeded()) {
@@ -78,21 +79,15 @@ public class Main {
 		}
 
 		if (res.isInit()) {
-			if (res.getSourceValue() != null) {
-				// if type has been supplied then use it
-				initStructure(config, res.getSourceValue());
-			} else {
-				// default to freemarker if no value has been supplied
-				initStructure(config, "freemarker");
-			}
+			initStructure(config, res.getTemplate(), res.getSourceValue());
 		}
 		
 		if (res.isRunServer()) {
 			if (res.getSource().getPath().equals(".")) {
 				// use the default destination folder
-				runServer(config.getString("destination.folder"), config.getString("server.port"));
+				runServer(config.getString(Keys.DESTINATION_FOLDER), config.getString(Keys.SERVER_PORT));
 			} else {
-				runServer(res.getSource().getPath(), config.getString("server.port"));
+				runServer(res.getSource().getPath(), config.getString(Keys.SERVER_PORT));
 			}
 		}
 		
@@ -127,16 +122,22 @@ public class Main {
 		JettyServer.run(path, port);
 		System.exit(0);
 	}
-	
-	private void initStructure(CompositeConfiguration config, String type) {
-		Init init = new Init(config);
+
+	private void initStructure(CompositeConfiguration config, String type, String source) {
+        Init init = new Init(config);
 		try {
-			File codeFolder = FileUtil.getRunningLocation();
-			init.run(new File("."), codeFolder, type);
+            File templateFolder = FileUtil.getRunningLocation();
+            File outputFolder;
+            if(source != null){
+                outputFolder = new File(source);
+            } else{
+                outputFolder = new File(".");
+            }
+            init.run(outputFolder, templateFolder, type);
 			System.out.println("Base folder structure successfully created.");
 			System.exit(0);
 		} catch (Exception e) {
-			System.err.println("Failed to initalise structure!");
+			System.err.println("Failed to initialise structure!");
 			e.printStackTrace();
 			System.exit(1);
 		}

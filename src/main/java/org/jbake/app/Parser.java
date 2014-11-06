@@ -2,9 +2,11 @@ package org.jbake.app;
 
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.io.IOUtils;
+import org.jbake.app.ConfigUtil.Keys;
 import org.jbake.parser.Engines;
 import org.jbake.parser.MarkupEngine;
 import org.jbake.parser.ParserContext;
+import org.json.simple.JSONValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,7 +54,7 @@ public class Parser {
         List<String> fileContents = null;
         try {
             is = new FileInputStream(file);
-            fileContents = IOUtils.readLines(is, config.getString("render.encoding"));
+            fileContents = IOUtils.readLines(is, config.getString(Keys.RENDER_ENCODING));
         } catch (IOException e) {
             LOGGER.error("Error while opening file {}: {}", file, e);
 
@@ -84,11 +86,11 @@ public class Parser {
         // then read engine specific headers
         engine.processHeader(context);
         
-        if (config.getString("default.status") != null) {
+        if (config.getString(Keys.DEFAULT_STATUS) != null) {
         	// default status has been set
         	if (content.get("status") == null) {
         		// file hasn't got status so use default
-        		content.put("status", config.getString("default.status"));
+        		content.put("status", config.getString(Keys.DEFAULT_STATUS));
         	}
         }
 
@@ -173,7 +175,7 @@ public class Parser {
                 String[] parts = line.split("=");
                 if (parts.length == 2) {
                     if (parts[0].equalsIgnoreCase("date")) {
-                        DateFormat df = new SimpleDateFormat(config.getString(ConfigUtil.DATE_FORMAT));
+                        DateFormat df = new SimpleDateFormat(config.getString(Keys.DATE_FORMAT));
                         Date date = null;
                         try {
                             date = df.parse(parts[1]);
@@ -186,6 +188,9 @@ public class Parser {
                         for( int i=0; i<tags.length; i++ )
                             tags[i]=tags[i].trim();
                         content.put(parts[0], tags);
+                    } else if (parts[1].startsWith("{") && parts[1].endsWith("}")) {
+                        // Json type
+                        content.put(parts[0], JSONValue.parse(parts[1]));
                     } else {
                         content.put(parts[0], parts[1]);
                     }

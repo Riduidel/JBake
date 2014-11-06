@@ -8,6 +8,7 @@ import java.util.Date;
 import java.util.Map;
 
 import org.apache.commons.configuration.CompositeConfiguration;
+import org.jbake.app.ConfigUtil.Keys;
 import org.jbake.template.ModelExtractor.Names;
 
 import com.orientechnologies.orient.core.db.document.ODatabaseDocumentTx;
@@ -42,7 +43,7 @@ public class FreemarkerTemplateEngine extends AbstractTemplateEngine {
 
     private void createTemplateConfiguration(final CompositeConfiguration config, final File templatesPath) {
         templateCfg = new Configuration();
-        templateCfg.setDefaultEncoding(config.getString("render.encoding"));
+        templateCfg.setDefaultEncoding(config.getString(Keys.RENDER_ENCODING));
         try {
             templateCfg.setDirectoryForTemplateLoading(templatesPath);
         } catch (IOException e) {

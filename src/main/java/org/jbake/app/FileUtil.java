@@ -1,5 +1,7 @@
 package org.jbake.app;
 
+import org.apache.commons.configuration.CompositeConfiguration;
+import org.jbake.app.ConfigUtil.Keys;
 import org.jbake.parser.Engines;
 
 import java.io.File;
@@ -113,6 +115,15 @@ public class FileUtil {
         }
     }
 
+    public static String findExtension(CompositeConfiguration config, String docType) {
+    	String extension = config.getString("template."+docType+".extension");
+    	if (extension != null) {
+    		return extension;
+    	} else {
+    		return config.getString(Keys.OUTPUT_EXTENSION);
+    	}
+    }
+    
 	/**
 	 * platform independent file.getPath() 
 	 * 

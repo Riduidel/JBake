@@ -47,7 +47,7 @@ public class Crawler {
     public Crawler(ODatabaseDocumentTx db, File source, CompositeConfiguration config) {
         this.db = db;
         this.config = config;
-        this.contentPath = source.getPath() + separator + config.getString("content.folder");
+        this.contentPath = source.getPath() + separator + config.getString(ConfigUtil.Keys.CONTENT_FOLDER);
         this.parser = new Parser(config, contentPath);
     }
 
@@ -73,7 +73,7 @@ public class Crawler {
                         switch (status) {
                             case UPDATED:
                                 sb.append(" : modified ");
-                                DBUtil.update(db, "delete from " + docType + " where uri=?", uri);
+                                DBUtil.update(db, "delete from " + docType + " where sourceuri=?", uri);
                                 break;
                             case IDENTICAL:
                                 sb.append(" : same ");
@@ -108,15 +108,13 @@ public class Crawler {
         }
         return sha1;
     }
-
+    
     private String buildURI(final File sourceFile) {
     	String uri = FileUtil.asPath(sourceFile.getPath()).replace(FileUtil.asPath( contentPath), "");
-    	//uri = config.getString("site.context") + uri.substring(1, uri.length());
     	// strip off leading / to enable generating non-root based sites
     	if (uri.startsWith("/")) {
     		uri = uri.substring(1, uri.length());
     	}
-        uri = uri.substring(0, uri.lastIndexOf(".")) + config.getString("output.extension");
         return uri;
     }
 
@@ -132,7 +130,7 @@ public class Crawler {
                 fileContents.put(FileContentsKeys.TAGS, tags);
             }
             fileContents.put(FileContentsKeys.FILE, sourceFile.getPath());
-            fileContents.put(FileContentsKeys.URI, uri);
+            fileContents.put(FileContentsKeys.URI, uri.substring(0, uri.lastIndexOf(".")) + FileUtil.findExtension(config, fileContents.get("type").toString()));
 
             String documentType = (String) fileContents.get(FileContentsKeys.TYPE);
             if (fileContents.get(FileContentsKeys.STATUS).equals(FileContentsKeys.PUBLISHED_DATE)) {
@@ -195,7 +193,7 @@ public class Crawler {
      * @param db
      * @return
      */
-	public static Set<String> getTags(ODatabaseDocumentTx db) {
+	public Set<String> getTags(ODatabaseDocumentTx db) {
 		List<ODocument> query = db.query(new OSQLSynchQuery<ODocument>("select tags from post where status='published'"));
         Set<String> result = new HashSet<String>();
         for (ODocument document : query) {
@@ -206,7 +204,7 @@ public class Crawler {
 	}
 
     private DocumentStatus findDocumentStatus(String docType, String uri, String sha1) {
-        List<ODocument> match = DBUtil.query(db, "select sha1,rendered from " + docType + " where uri=?", uri);
+        List<ODocument> match = DBUtil.query(db, "select sha1,rendered from " + docType + " where sourceuri=?", uri);
         if (!match.isEmpty()) {
             ODocument entries = match.get(0);
             String oldHash = entries.field(FileContentsKeys.SHA12);

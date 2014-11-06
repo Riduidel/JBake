@@ -10,7 +10,9 @@ import java.util.ServiceLoader;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+
 import org.apache.commons.configuration.CompositeConfiguration;
+import org.jbake.app.ConfigUtil.Keys;
 import org.jbake.model.DocumentTypes;
 import org.jbake.render.RenderingException;
 import org.jbake.render.RenderingTool;
@@ -77,7 +79,7 @@ public class Oven {
 
     private void ensureDestination() throws Exception {
         if (null == destination) {
-            destination = new File(config.getString("destination.folder"));
+            destination = new File(source, config.getString(Keys.DESTINATION_FOLDER));
         }
         if (!destination.exists()) {
             destination.mkdirs();
@@ -94,9 +96,9 @@ public class Oven {
 	 */
 	public void setupPaths() throws Exception {
 		ensureSource();
-        templatesPath = setupRequiredFolderFromConfig("template.folder");
-        contentsPath = setupRequiredFolderFromConfig("content.folder");
-        assetsPath = setupPathFromConfig("asset.folder");
+        templatesPath = setupRequiredFolderFromConfig(Keys.TEMPLATE_FOLDER);
+        contentsPath = setupRequiredFolderFromConfig(Keys.CONTENT_FOLDER);
+        assetsPath = setupPathFromConfig(Keys.ASSET_FOLDER);
 		if (!assetsPath.exists()) {
 			LOGGER.warn("No asset folder was found!");
 		}
@@ -121,7 +123,7 @@ public class Oven {
 	 * @throws Exception
 	 */
 	public void bake() throws Exception {
-        ODatabaseDocumentTx db = DBUtil.createDB(config.getString("db.store"), config.getString("db.path"));
+        ODatabaseDocumentTx db = DBUtil.createDB(config.getString(Keys.DB_STORE), config.getString(Keys.DB_PATH));
         updateDocTypesFromConfiguration();
         DBUtil.updateSchema(db);
         try {

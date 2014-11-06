@@ -15,9 +15,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.TreeSet;
 
 import org.apache.commons.configuration.CompositeConfiguration;
+import org.jbake.app.ConfigUtil.Keys;
 import org.jbake.model.FileContentsKeys;
 import org.jbake.model.TimeIntervals;
 import org.jbake.template.DelegatingTemplateEngine;
@@ -223,25 +223,26 @@ public class Renderer {
      * @throws Exception
      */
     public void render(Map<String, Object> content) throws Exception {
-//		String outputFilename = (new File((String)content.get("file")).getPath().replace(source.getPath()+File.separator+"content", destination.getPath()));
+    	String docType = (String) content.get("type");
         String outputFilename = destination.getPath() + File.separatorChar + (String) content.get("uri");
         outputFilename = outputFilename.substring(0, outputFilename.lastIndexOf("."));
 
         // delete existing versions if they exist in case status has changed either way
-        File draftFile = new File(outputFilename + config.getString("draft.suffix") + config.getString("output.extension"));
+        File draftFile = new File(outputFilename + config.getString(Keys.DRAFT_SUFFIX) + FileUtil.findExtension(config, docType));
         if (draftFile.exists()) {
             draftFile.delete();
         }
-        File publishedFile = new File(outputFilename + config.getString("output.extension"));
+
+        File publishedFile = new File(outputFilename + FileUtil.findExtension(config, docType));
         if (publishedFile.exists()) {
             publishedFile.delete();
         }
 
         if (content.get("status").equals("draft")) {
-            outputFilename = outputFilename + config.getString("draft.suffix");
+            outputFilename = outputFilename + config.getString(Keys.DRAFT_SUFFIX);
         }
-        File outputFile = new File(outputFilename + config.getString("output.extension"));
 
+        File outputFile = new File(outputFilename + FileUtil.findExtension(config,docType));
         StringBuilder sb = new StringBuilder();
         sb.append("Rendering [").append(outputFile).append("]... ");
         Map<String, Object> model = new HashMap<String, Object>();
@@ -249,7 +250,6 @@ public class Renderer {
         model.put("renderer", renderingEngine);
 
         try {
-            String docType = (String) content.get("type");
             Writer out = createWriter(outputFile);
             renderingEngine.renderDocument(model, findTemplateName(docType), out);
             out.close();
@@ -268,7 +268,7 @@ public class Renderer {
             file.createNewFile();
         }
 
-        return new OutputStreamWriter(new FileOutputStream(file), config.getString("render.encoding"));
+        return new OutputStreamWriter(new FileOutputStream(file), config.getString(ConfigUtil.Keys.RENDER_ENCODING));
     }
     
     private void render(RenderingConfig renderConfig) throws Exception {
@@ -496,4 +496,18 @@ public class Renderer {
 			}
 		});
 	}
+    
+    /**
+     * Builds simple map of values, which are exposed when rendering index/archive/sitemap/feed/tags.
+     * 
+     * @param type
+     * @return
+     */
+    private Map<String, Object> buildSimpleModel(String type) {
+    	Map<String, Object> content = new HashMap<String, Object>();
+    	content.put("type", type);
+    	content.put("rootpath", "");
+    	// add any more keys here that need to have a default value to prevent need to perform null check in templates
+    	return content;
+    }
 }

@@ -8,6 +8,7 @@ import java.util.Map;
 
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.io.FileUtils;
+import org.jbake.app.ConfigUtil.Keys;
 import org.jbake.model.DocumentTypes;
 import org.junit.After;
 import org.junit.Assert;
@@ -48,7 +49,7 @@ public class RendererTest {
         }
 
         config = ConfigUtil.load(new File(this.getClass().getResource("/").getFile()));
-        Assert.assertEquals(".html", config.getString("output.extension"));
+        Assert.assertEquals(".html", config.getString(Keys.OUTPUT_EXTENSION));
         db = DBUtil.createDB("memory", "documents"+System.currentTimeMillis());
     }
 
@@ -80,7 +81,8 @@ public class RendererTest {
         	.contains("2013</p>")
         	.contains("Lorem ipsum dolor sit amet")
         	.contains("<h5>Published Posts</h5>")
-        	.contains("blog/2012/first-post.html");
+        	.contains("blog/2012/first-post.html")
+        	.contains("<meta property=\"og:description\" content=\"Something\"/>");
     }
     
     @Test
