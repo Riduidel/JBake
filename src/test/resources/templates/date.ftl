@@ -41,7 +41,7 @@
 			<#if date_year ??>
 			<ul>
 			<#list published_during as post>
-				<li><h4>${post.date?string("dd MMMM")} - <a href="${post.uri}">${post.title}</a></h4></li>
+				<li><h4>${post.date?string("dd MMMM")} - <a href="${rootpath}${post.uri}">${post.title}</a></h4></li>
 			</#list>
 			</ul>
 			</#if>

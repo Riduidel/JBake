@@ -150,7 +150,7 @@ public class Renderer {
 		 */
 		private DefaultRenderingConfig(File path, String allInOneName) {
 			super(path, allInOneName, findTemplateName(allInOneName));
-			this.content = Collections.singletonMap("type",allInOneName);
+			this.content = buildSimpleModel(allInOneName);
 		}
 		
 		/**
@@ -160,7 +160,7 @@ public class Renderer {
 		 */
 		public DefaultRenderingConfig(String filename, String allInOneName) {
 			super(new File(destination, filename), allInOneName, findTemplateName(allInOneName));
-			this.content = Collections.singletonMap("type",allInOneName);
+			this.content = buildSimpleModel(allInOneName);
 		}
 		
 		/**
@@ -382,7 +382,7 @@ public class Renderer {
             	Map<String, Object> model = new HashMap<String, Object>();
             	model.put("renderer", renderingEngine);
             	model.put("tag", tag);
-            	model.put("content", Collections.singletonMap("type","tag"));
+            	model.put("content", buildSimpleModel("tag"));
 
             	tag = tag.trim().replace(" ", "-");
             	File path = new File(new File(destination, tagPath), tag + config.getString("output.extension"));
@@ -461,8 +461,11 @@ public class Renderer {
 			public void renderElement(ReadableInterval interval) throws Exception {
 				File createdFile = new File(destination, datesPath);
 				Map<String, Object> model = new HashMap<String, Object>();
+				Map<String, Object> content = buildSimpleModel("date");
+				String rootPath = (String) content.get(FileContentsKeys.ROOTPATH);
+				// Immediatly take care 
+				rootPath += "../";
 				model.put("renderer", renderingEngine);
-				model.put("content", Collections.singletonMap("type", "date"));
 				model.put(FileContentsKeys.INTERVAL, interval);
 				model.put(FileContentsKeys.SUBINTERVALS, toDateMap(toRender.get(interval)));
 				// Maybe interval is even eternity, in whichc ase we have to
@@ -470,6 +473,7 @@ public class Renderer {
 				if (interval.toDuration().isLongerThan(Duration.standardDays(365 * 10))) {
 					createdFile = new File(createdFile, "index" + config.getString("output.extension"));
 				} else {
+					rootPath += "../";
 					model.put(FileContentsKeys.DATE_YEAR, formatForModel(interval, TimeIntervals.YEAR));
 					createdFile = new File(createdFile, formatFileName(interval, TimeIntervals.YEAR));
 					if (interval.toDuration().isLongerThan(Duration.standardDays(31 * 2))) {
@@ -477,6 +481,7 @@ public class Renderer {
 						// months
 						createdFile = new File(createdFile, "index" + config.getString("output.extension"));
 					} else {
+						rootPath += "../";
 						createdFile = new File(createdFile, formatFileName(interval, TimeIntervals.MONTH));
 						model.put(FileContentsKeys.DATE_MONTH, formatForModel(interval, TimeIntervals.MONTH));
 						if (interval.toDuration().isLongerThan(Duration.standardDays(7 * 2))) {
@@ -489,6 +494,9 @@ public class Renderer {
 						}
 					}
 				}
+				// seems to be quite weird : i can't access the rootpath unless I put it in the model (instead of the content) map
+				model.put(FileContentsKeys.ROOTPATH, rootPath);
+				model.put("content", content);
 				render(new ModelRenderingConfig(createdFile,
 								"date",
 								model,
@@ -501,12 +509,12 @@ public class Renderer {
      * Builds simple map of values, which are exposed when rendering index/archive/sitemap/feed/tags.
      * 
      * @param type
-     * @return
+     * @return a map that can be later channged
      */
     private Map<String, Object> buildSimpleModel(String type) {
     	Map<String, Object> content = new HashMap<String, Object>();
     	content.put("type", type);
-    	content.put("rootpath", "");
+    	content.put(FileContentsKeys.ROOTPATH, "");
     	// add any more keys here that need to have a default value to prevent need to perform null check in templates
     	return content;
     }
